@@ -1,4 +1,4 @@
-.navbar {
+.app-navbar {
     border-radius: 8px;
     margin: 1rem 1.5rem 0;
     color: #333;
@@ -58,6 +58,7 @@
         }
 
         .dropdown-menu {
+            display: block;
             position: absolute;
             top: 55px;
             right: 0;
@@ -65,13 +66,13 @@
             width: 220px;
 
             background: white;
-            border-radius: 12px;
+            border-radius: 8px;
 
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 
             overflow: hidden;
 
-            .dropdown-header {
+            .dropdown-title {
                 padding: 0.75rem 1rem;
                 font-weight: 600;
                 border-bottom: 1px solid #eee;
@@ -104,7 +105,7 @@
 }
 
 @media (max-width:768px) {
-    .navbar {
+    .app-navbar {
         padding: 0 16px;
         .navbar-container {
             justify-content: flex-end;

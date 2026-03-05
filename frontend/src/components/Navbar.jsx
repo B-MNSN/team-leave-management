@@ -13,7 +13,7 @@ function Navbar() {
     const firstLetter = user?.name?.charAt(0).toUpperCase();
 
     return (
-        <nav className="navbar">
+        <nav className="app-navbar">
             <div className="navbar-container">
                 <div className="navbar-title">
                     Leave Management
@@ -35,7 +35,7 @@ function Navbar() {
                     {open && (
                         <div className="dropdown-menu">
 
-                            <div className="dropdown-header">
+                            <div className="dropdown-title">
                                 Account
                             </div>
 

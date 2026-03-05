@@ -1,0 +1,49 @@
+.leave-table {
+    thead {
+        font-size: 0.9rem;
+    }
+
+    .badge-soft {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-soft-warning {
+        background: #fff7e6;
+        color: #d48806;
+    }
+
+    .badge-soft-success {
+        background: #f6ffed;
+        color: #389e0d;
+    }
+
+    .badge-soft-danger {
+        background: #fff1f0;
+        color: #cf1322;
+    }
+}
+
+
+
+.leave-tabs {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #eee;
+
+    .tab {
+        background: none;
+        border: none;
+        padding: 0.5rem 0;
+        font-weight: 500;
+        color: #777;
+        cursor: pointer;
+
+        &.active {
+            color: #111;
+            border-bottom: 2px solid #111;
+        }
+    }
+}
