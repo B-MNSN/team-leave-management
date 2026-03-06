@@ -19,7 +19,7 @@ function Sidebar() {
             <div className="sidebar-header">
                 <div className="box-logo">
                     <IoFlash className="logo" size={28} />
-                    <span className="logo-text">LM</span>
+                    <span className="logo-text">TLM</span>
                 </div>
 
                 <button

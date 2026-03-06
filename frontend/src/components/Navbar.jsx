@@ -1,22 +1,24 @@
 import { FiChevronDown, FiUser, FiLogOut } from "react-icons/fi";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
     const [open, setOpen] = useState(false);
+    const user = JSON.parse(localStorage.getItem("user")|| "{}");
+    const navigate = useNavigate();
 
-    const user = {
-        name: "user1",
-        role: "employee",
-        avatar: "u"
+    const firstLetter = user?.username?.charAt(0).toUpperCase();
+
+    const handleLogout = async () => {
+        localStorage.removeItem("user");
+        navigate("/login");
     };
-
-    const firstLetter = user?.name?.charAt(0).toUpperCase();
 
     return (
         <nav className="app-navbar">
             <div className="navbar-container">
                 <div className="navbar-title">
-                    Leave Management
+                    Team Leave Management
                 </div>
                 <div className="user-dropdown"
                     onClick={() => setOpen(!open)}
@@ -26,7 +28,7 @@ function Navbar() {
                     </div>
 
                     <div className="user-info">
-                        <div className="user-name">{user.name}</div>
+                        <div className="user-name">{user.username}</div>
                         <div className="user-role">{user.role}</div>
                     </div>
 
@@ -44,7 +46,7 @@ function Navbar() {
                                 Profile
                             </button>
 
-                            <button className="dropdown-item logout">
+                            <button className="dropdown-item logout" onClick={handleLogout}>
                                 <FiLogOut />
                                 Sign Out
                             </button>
