@@ -1,37 +1,97 @@
-function Table({ columns, data }) {
+import { FiEdit2 } from "react-icons/fi";
+
+function Table({ tab, data }) {
+
+    const getDurationLabel = (duration) => {
+        if (duration === "HALF_AM") return "Morning";
+        if (duration === "HALF_PM") return "Afternoon";
+        return "Full Day";
+    };
+
+    const formatLeaveDate = (start, end) => {
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        const dayStart = startDate.getDate();
+        const dayEnd = endDate.getDate();
+
+        const monthStart = startDate.toLocaleString("en-US", { month: "short" });
+        const monthEnd = endDate.toLocaleString("en-US", { month: "short" });
+
+        const yearStart = startDate.getFullYear();
+        const yearEnd = endDate.getFullYear();
+
+        // same day
+        if (startDate.toDateString() === endDate.toDateString()) {
+            return `${dayStart} ${monthStart} ${yearStart}`;
+        }
+
+        // same month same year
+        if (monthStart === monthEnd && yearStart === yearEnd) {
+            return `${dayStart}–${dayEnd} ${monthStart} ${yearStart}`;
+        }
+
+        // different month same year
+        if (yearStart === yearEnd) {
+            return `${dayStart} ${monthStart} – ${dayEnd} ${monthEnd} ${yearStart}`;
+        }
+
+        // different year
+        return `${dayStart} ${monthStart} ${yearStart} – ${dayEnd} ${monthEnd} ${yearEnd}`;
+    };
 
     return (
         <table className="table table-hover leave-table">
             <thead>
                 <tr>
                     <th>No.</th>
-                    {columns.map((col, index) => (
-                        <th key={index}>{col.header}</th>
-                    ))}
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Duration</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    {tab === "REQUEST" && <th className="text-center">Action</th>}
                 </tr>
             </thead>
 
             <tbody>
 
-                {data.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                        <td>{rowIndex + 1}</td>
-
-                        {columns.map((col, colIndex) => (
-
-                            <td key={colIndex}>
-                                {col.render
-                                    ? col.render(row)
-                                    : row[col.accessor]
-                                }
-                            </td>
-
-                        ))}
-
+                {data.length === 0 ? (
+                    <tr>
+                        <td colSpan="8" className="text-center py-4">
+                            No data available
+                        </td>
                     </tr>
+                ) : (
+                    data.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                            <td>{rowIndex + 1}</td>
+                            <td>{formatLeaveDate(row.start_date, row.end_date)}</td>
+                            <td>{row.leave_type_name}</td>
+                            <td>{getDurationLabel(row.duration)}</td>
+                            <td>{row.total_days}</td>
+                            <td>
+                                <span
+                                    className={`badge-soft
+                                        ${row.status === "APPROVED" && "badge-soft-success"}
+                                        ${row.status === "REJECTED" && "badge-soft-danger"}
+                                        ${row.status === "PENDING" && "badge-soft-warning"}
+                                    `}
+                                >
+                                    {row.status}
+                                </span>
+                            </td>
+                            <td>{row.reason}</td>
+                            {tab === "REQUEST" && (
+                                <td className="text-center">
+                                    <FiEdit2 />
+                                </td>
+                            )}
+                        </tr>
 
-                ))}
-
+                    ))
+                )}
             </tbody>
 
         </table>

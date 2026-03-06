@@ -3,108 +3,45 @@ import { useState } from "react";
 import LeaveModal from "../components/LeaveModal";
 import Table from "../components/Table";
 import LeaveBalance from "../components/LeaveBalance";
+import { useEffect } from "react";
+import api from "../api/api";
 
 function LeavePage() {
-
+    const user = JSON.parse(localStorage.getItem("user"));
     const [tab, setTab] = useState("REQUEST");
     const [open, setOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState("ALL");
+    const [requests, setRequests] = useState([]);
+    const [history, setHistory] = useState([]);
 
-    const leaves = [
-        {
-            id: 1,
-            type: "Annual Leave",
-            date: "10 - 12 Mar",
-            days: 3,
-            duration: "FULL",
-            status: "PENDING",
-            reason: "Vacation"
-        },
-        {
-            id: 2,
-            type: "Sick Leave",
-            date: "20 Feb",
-            days: 0.5,
-            duration: "HALF_AM",
-            status: "APPROVED",
-            reason: "Flu"
-        },
-        {
-            id: 3,
-            type: "Personal Leave",
-            date: "25 Feb",
-            days: 0.5,
-            duration: "HALF_PM",
-            status: "REJECTED",
-            reason: "Family business"
-        }
-    ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const resRequests = await api.get(`/leave/requests/${user.id}`);
+                if (resRequests.status === 200) {
+                    setRequests(resRequests?.data || []);
+                }
 
-    const leaveBalance = {
-        annual: 10,
-        sick: 30,
-        personal: 6
-    };
+                const resHistory = await api.get(`/leave/history/${user.id}`);
+                if (resHistory.status === 200) {
+                    setHistory(resHistory?.data || []);
+                }
 
-    const getDurationLabel = (duration) => {
-        if (duration === "HALF_AM") return "Morning";
-        if (duration === "HALF_PM") return "Afternoon";
-        return "Full Day";
-    };
+            } catch (error) {
+                console.log(error)
 
-    const filteredLeaves = leaves.filter((leave) => {
+            }
+        };
+
+        fetchData();
+
+    }, []);
+
+    const filteredLeaves = history?.filter((leave) => {
         if (filterStatus === "ALL") return true;
         return leave.status === filterStatus;
     });
 
-    const requestColumns = [
-        { header: "Type", accessor: "type" },
-        { header: "Date", accessor: "date" },
-        {
-            header: "Duration",
-            render: (row) => getDurationLabel(row.duration)
-        },
-        { header: "Days", accessor: "days" },
-        {
-            header: "Status",
-            render: (row) => (
-                <span
-                    className={`badge-soft
-                    ${row.status === "APPROVED" && "badge-soft-success"}
-                    ${row.status === "REJECTED" && "badge-soft-danger"}
-                    ${row.status === "PENDING" && "badge-soft-warning"}
-                    `}
-                >
-                    {row.status}
-                </span>
-            )
-        }
-    ];
-
-    const historyColumns = [
-        { header: "Date", accessor: "date" },
-        { header: "Type", accessor: "type" },
-        {
-            header: "Duration",
-            render: (row) => getDurationLabel(row.duration)
-        },
-        { header: "Days", accessor: "days" },
-        {
-            header: "Status",
-            render: (row) => (
-                <span
-                    className={`badge-soft
-                    ${row.status === "APPROVED" && "badge-soft-success"}
-                    ${row.status === "REJECTED" && "badge-soft-danger"}
-                    ${row.status === "PENDING" && "badge-soft-warning"}
-                    `}
-                >
-                    {row.status}
-                </span>
-            )
-        },
-        { header: "Reason", accessor: "reason" }
-    ];
 
     return (
         <div className="leave-page">
@@ -152,13 +89,9 @@ function LeavePage() {
 
                         </div>
 
-                        {/* Leave Balance */}
-                        <LeaveBalance balance={leaveBalance} />
+                        <LeaveBalance />
 
-                        <Table
-                            columns={requestColumns}
-                            data={leaves}
-                        />
+                        <Table data={requests} tab="REQUEST" />
 
                     </>
                 )}
@@ -188,10 +121,7 @@ function LeavePage() {
 
                         </div>
 
-                        <Table
-                            columns={historyColumns}
-                            data={filteredLeaves}
-                        />
+                        <Table data={filteredLeaves} tab="HISTORY" />
 
                     </>
                 )}
