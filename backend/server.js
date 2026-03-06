@@ -31,6 +31,7 @@ app.use((err, req, res, next) => {
 
 // Routes
 app.use('/auth', require('./src/routes/authRoutes'));
+app.use('/leave', require('./src/routes/leaveRoutes'));
 
 // Start Server
 app.listen(PORT, () => {
