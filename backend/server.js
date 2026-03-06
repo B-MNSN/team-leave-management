@@ -1,9 +1,17 @@
 require('dotenv').config();
 
 const express = require('express');
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: 'http://localhost:5174', // Adjust this to your frontend URL
+    credentials: true,
+    methods: ["GET","POST","PUT","DELETE"],
+    allowedHeaders: ["Content-Type","Authorization"]
+}));
 
 // Middleware
 app.use(express.json());
@@ -20,6 +28,9 @@ app.use((err, req, res, next) => {
         message: 'Something went wrong'
     });
 });
+
+// Routes
+app.use('/auth', require('./src/routes/authRoutes'));
 
 // Start Server
 app.listen(PORT, () => {
