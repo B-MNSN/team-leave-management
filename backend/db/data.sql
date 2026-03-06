@@ -4,11 +4,11 @@ USE leave_management;
 -- INSERT USERS
 -- =====================================
 
-INSERT INTO users (name, email, role) VALUES
-('User One','user1@company.com','EMPLOYEE'),
-('User Two','user2@company.com','EMPLOYEE'),
-('User Three','user3@company.com','EMPLOYEE'),
-('Manager','manager@company.com','MANAGER');
+INSERT INTO users (name, email, password, role) VALUES
+('user1','user1@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
+('user2','user2@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
+('user3','user3@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
+('manager','manager@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','MANAGER');
 
 
 
