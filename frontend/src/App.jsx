@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import MainLayout from './layouts/MainLayout';
 import LeavePage from './pages/LeavePage';
 import Login from './pages/Login';
+import ProtectedRoute from '../routes/ProtectedRoute';
 
 function App() {
   return (
@@ -12,7 +13,13 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
 
-        <Route element={<MainLayout />}>
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/" element={<Dashboard />} />
           <Route path="/leave" element={<LeavePage />} />
         </Route>
