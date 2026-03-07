@@ -3,52 +3,108 @@ import { Modal, CloseButton, Alert } from "react-bootstrap";
 import api from "../api/api";
 import Swal from "sweetalert2";
 
-function LeaveModal({ show, onClose }) {
+const initialForm = {
+    type: "",
+    durationType: "",
+    halfPeriod: "",
+    start: "",
+    end: "",
+    reason: ""
+};
 
-    const [type, setType] = useState("");
-    const [durationType, setDurationType] = useState("");
-    const [halfPeriod, setHalfPeriod] = useState("");
-    const [start, setStart] = useState("");
-    const [end, setEnd] = useState("");
-    const [reason, setReason] = useState("");
+function LeaveModal({ show, onClose, onSuccess, leaveData }) {
+    const [form, setForm] = useState(initialForm);
     const [submitted, setSubmitted] = useState(false);
     const [leaveQuota, setLeaveQuota] = useState([]);
 
     const user = JSON.parse(localStorage.getItem("user"));
 
+    const update = (key, value) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const resetForm = () => {
+        setForm(initialForm);
+        setSubmitted(false);
+    };
+
+    const closeModal = () => {
+        resetForm();
+        onClose();
+    };
+
+    // fetch leave quota
     useEffect(() => {
         if (!show) return;
 
         const fetchQuota = async () => {
-            const res = await api.get(`/leave/balance/${user.id}`);
-            setLeaveQuota(res.data);
+            try {
+                const res = await api.get(`/leave/balance/${user.id}`);
+                setLeaveQuota(res.data);
+
+            } catch (err) {
+                console.error(err);
+            }
         };
 
         fetchQuota();
     }, [show]);
 
-    const calculateDays = () => {
+    const formatDate = (date) => {
+        if (!date) return "";
 
-        if (!start) return 0;
+        const d = new Date(date);
 
-        if (durationType === "half") {
-            return 0.5;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    };
+
+    useEffect(() => {
+        if (!leaveData) return;
+        setForm({
+            type: leaveData.leave_type_id,
+            start: formatDate(leaveData.start_date),
+            end: leaveData.duration === "FULL" ?  "" : formatDate(leaveData.end_date),
+            reason: leaveData.reason || "",
+            durationType:
+                leaveData.duration === "FULL"
+                    ? "single"
+                    : "half",
+            halfPeriod:
+                leaveData.duration === "HALF_AM"
+                    ? "morning"
+                    : leaveData.duration === "HALF_PM"
+                    ? "afternoon"
+                    : ""
+        });
+
+    }, [leaveData]);
+
+    // calculate leave days
+    const days = useMemo(() => {
+        if (!form.start) return 0;
+
+        if (form.durationType === "half") return 0.5;
+
+        const startDate = new Date(form.start);
+
+        if (form.durationType === "single") {
+
+            const day = startDate.getDay();
+            return day === 0 || day === 6 ? 0 : 1;
+
         }
 
-        if (durationType === "single") {
-            const d = new Date(start).getDay();
-            if (d === 0 || d === 6) return 0;
-            return 1;
-        }
+        if (form.durationType === "multiple") {
 
-        if (durationType === "multiple") {
-
-            if (!end) return 0;
+            if (!form.end) return 0;
 
             let count = 0;
 
-            const startDate = new Date(start);
-            const endDate = new Date(end);
+            const endDate = new Date(form.end);
             const current = new Date(startDate);
 
             while (current <= endDate) {
@@ -66,16 +122,16 @@ function LeaveModal({ show, onClose }) {
         }
 
         return 0;
-    };
-
-    const days = calculateDays();
+    }, [form]);
 
     const selectedQuota = leaveQuota.find(
-        (q) => q.id === type
+        (q) => q.id === form.type
     );
 
+    const displayDays = days || leaveData?.total_days || 0;
+
     const remainingAfterRequest = selectedQuota
-        ? selectedQuota.remaining_days - days
+        ? selectedQuota.remaining_days - displayDays
         : 0;
 
     const quotaIndicator = useMemo(() => {
@@ -103,35 +159,30 @@ function LeaveModal({ show, onClose }) {
         const today = new Date();
         today.setHours(0,0,0,0);
 
-        if (!type) return "Please select leave type";
+        if (!form.type) return "Please select leave type";
 
-        if (!durationType) return "Please select leave duration";
+        if (!form.durationType) return "Please select leave duration";
 
-        if (!start) return "Please select start date";
+        if (!form.start) return "Please select start date";
 
-        if (!reason.trim()) return "Please enter reason";
+        if (!form.reason.trim()) return "Please enter reason";
 
-        const startDate = new Date(start);
+        const startDate = new Date(form.start);
 
         if (startDate < today) {
             return "Cannot request leave in the past";
         }
 
-        if (durationType === "multiple" && !end) {
+        if (form.durationType === "multiple" && !form.end) {
             return "Please select end date";
         }
 
-        if (durationType === "half" && !halfPeriod) {
+        if (form.durationType === "half" && !form.halfPeriod) {
             return "Please select morning or afternoon";
         }
 
-        if (start && end) {
-
-            const endDate = new Date(end);
-
-            if (endDate < startDate) {
-                return "End date cannot be before start date";
-            }
+        if (form.end && new Date(form.end) < startDate) {
+            return "End date cannot be before start date";
         }
 
         if (days <= 0) {
@@ -142,9 +193,10 @@ function LeaveModal({ show, onClose }) {
             return "Leave quota exceeded";
         }
 
+
         return "";
 
-    }, [type, start, end, durationType, halfPeriod, days, reason, selectedQuota, remainingAfterRequest]);
+    }, [form, days, selectedQuota, remainingAfterRequest]);
 
     const handleSubmit = async (e) => {
 
@@ -155,35 +207,44 @@ function LeaveModal({ show, onClose }) {
 
         let duration = "FULL";
 
-        if (durationType === "half") {
-            duration = halfPeriod === "morning" ? "HALF_AM" : "HALF_PM";
+        if (form.durationType === "half") {
+            duration = form.halfPeriod === "morning"
+                ? "HALF_AM"
+                : "HALF_PM";
         }
 
         const payload = {
             user_id: user.id,
-            leave_type_id: type,
-            start_date: start,
-            end_date: durationType === "multiple" ? end : start,
+            leave_type_id: form.type,
+            start_date: form.start,
+            end_date:
+                form.durationType === "multiple"
+                    ? form.end
+                    : form.start,
             duration,
             total_days: days,
-            reason
+            reason: form.reason
         };
 
         try {
 
-            await api.post("/leave/request", payload);
+            if (leaveData) {
+                await api.put(`/leave/request/${leaveData.id}`, payload);
+            } else {
+                await api.post("/leave/request", payload);
+            }
 
             Swal.fire({
                 icon: "success",
-                title: "Leave Request Submitted",
-                text: "Your leave request has been created successfully",
+                title: leaveData ? "Leave Updated" : "Leave Created",
                 confirmButtonColor: "#111"
             });
 
-            resetForm();
-            onClose();
+            onSuccess();
+            closeModal();
 
         } catch (err) {
+
             const message =
                 err.response?.data?.message ||
                 "Something went wrong";
@@ -194,27 +255,19 @@ function LeaveModal({ show, onClose }) {
                 text: message,
                 confirmButtonColor: "#111"
             });
-            console.error(err);
+
         }
-    };
 
-    const resetForm = () => {
-
-        setType("");
-        setDurationType("");
-        setHalfPeriod("");
-        setStart("");
-        setEnd("");
-        setReason("");
-        setSubmitted(false);
     };
 
     return (
-        <Modal show={show} onHide={onClose} centered size="lg">
+        <Modal show={show} onHide={closeModal} centered size="lg">
 
             <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
-                <h5 className="m-0">Create Leave Request</h5>
-                <CloseButton onClick={onClose} />
+                <h5 className="m-0">
+                    {leaveData ? "Edit Leave Request" : "Create Leave Request"}
+                </h5>
+                <CloseButton onClick={closeModal} />
             </div>
 
             <Modal.Body>
@@ -233,10 +286,9 @@ function LeaveModal({ show, onClose }) {
 
                         <select
                             className="form-select"
-                            value={type}
-                            onChange={(e) => setType(Number(e.target.value))}
+                            value={form.type}
+                            onChange={(e) => update("type", Number(e.target.value))}
                         >
-
                             <option value="">Select</option>
 
                             {leaveQuota.map((q) => (
@@ -244,7 +296,6 @@ function LeaveModal({ show, onClose }) {
                                     {q.name} ({q.remaining_days} days left)
                                 </option>
                             ))}
-
                         </select>
 
                     </div>
@@ -262,9 +313,8 @@ function LeaveModal({ show, onClose }) {
                                 <input
                                     type="radio"
                                     className="form-check-input"
-                                    name="duration"
-                                    value="half"
-                                    onChange={(e) => setDurationType(e.target.value)}
+                                    checked={form.durationType === "half"}
+                                    onChange={() => update("durationType", "half")}
                                 />
                                 Half Day
                             </label>
@@ -273,9 +323,8 @@ function LeaveModal({ show, onClose }) {
                                 <input
                                     type="radio"
                                     className="form-check-input"
-                                    name="duration"
-                                    value="single"
-                                    onChange={(e) => setDurationType(e.target.value)}
+                                    checked={form.durationType === "single"}
+                                    onChange={() => update("durationType", "single")}
                                 />
                                 Full Day
                             </label>
@@ -284,9 +333,8 @@ function LeaveModal({ show, onClose }) {
                                 <input
                                     type="radio"
                                     className="form-check-input"
-                                    name="duration"
-                                    value="multiple"
-                                    onChange={(e) => setDurationType(e.target.value)}
+                                    checked={form.durationType === "multiple"}
+                                    onChange={() => update("durationType", "multiple")}
                                 />
                                 Multiple Days
                             </label>
@@ -296,7 +344,7 @@ function LeaveModal({ show, onClose }) {
                     </div>
 
 
-                    {durationType === "half" && (
+                    {form.durationType === "half" && (
 
                         <div>
 
@@ -310,9 +358,8 @@ function LeaveModal({ show, onClose }) {
                                     <input
                                         type="radio"
                                         className="form-check-input"
-                                        name="half"
-                                        value="morning"
-                                        onChange={(e) => setHalfPeriod(e.target.value)}
+                                        checked={form.halfPeriod === "morning"}
+                                        onChange={() => update("halfPeriod", "morning")}
                                     />
                                     Morning
                                 </label>
@@ -321,9 +368,8 @@ function LeaveModal({ show, onClose }) {
                                     <input
                                         type="radio"
                                         className="form-check-input"
-                                        name="half"
-                                        value="afternoon"
-                                        onChange={(e) => setHalfPeriod(e.target.value)}
+                                        checked={form.halfPeriod === "afternoon"}
+                                        onChange={() => update("halfPeriod", "afternoon")}
                                     />
                                     Afternoon
                                 </label>
@@ -346,13 +392,13 @@ function LeaveModal({ show, onClose }) {
                             <input
                                 type="date"
                                 className="form-control"
-                                value={start}
-                                onChange={(e) => setStart(e.target.value)}
+                                value={form.start}
+                                onChange={(e) => update("start", e.target.value)}
                             />
 
                         </div>
 
-                        {durationType === "multiple" && (
+                        {form.durationType === "multiple" && (
 
                             <div className="col">
 
@@ -363,8 +409,8 @@ function LeaveModal({ show, onClose }) {
                                 <input
                                     type="date"
                                     className="form-control"
-                                    value={end}
-                                    onChange={(e) => setEnd(e.target.value)}
+                                    value={form.end}
+                                    onChange={(e) => update("end", e.target.value)}
                                 />
 
                             </div>
@@ -383,14 +429,15 @@ function LeaveModal({ show, onClose }) {
                         <textarea
                             className="form-control"
                             rows="3"
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            value={form.reason}
+                            onChange={(e) => update("reason", e.target.value)}
                         />
 
                     </div>
 
 
-                    {type && days > 0 && selectedQuota && (
+                    {/* Leave Summary */}
+                    {form.type && selectedQuota && form.start && (
 
                         <div className="bg-light rounded p-3">
 
@@ -399,7 +446,7 @@ function LeaveModal({ show, onClose }) {
                             </div>
 
                             <div>
-                                Requested: <b>{days} days</b>
+                                Requested: <b>{displayDays} days</b>
                             </div>
 
                             <div>
@@ -435,7 +482,7 @@ function LeaveModal({ show, onClose }) {
                         <button
                             type="button"
                             className="btn btn-light"
-                            onClick={onClose}
+                            onClick={closeModal}
                         >
                             Cancel
                         </button>
@@ -443,9 +490,9 @@ function LeaveModal({ show, onClose }) {
                         <button
                             type="submit"
                             className="btn btn-dark"
-                            disabled={!!error || quotaIndicator === "exceed"}
+                            disabled={quotaIndicator === "exceed"}
                         >
-                            Submit Request
+                            {leaveData ? "Update Request" : "Submit Request"}
                         </button>
 
                     </div>

@@ -5,6 +5,7 @@ import Table from "../components/Table";
 import LeaveBalance from "../components/LeaveBalance";
 import { useEffect } from "react";
 import api from "../api/api";
+import Swal from "sweetalert2";
 
 function LeavePage() {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -13,28 +14,28 @@ function LeavePage() {
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [requests, setRequests] = useState([]);
     const [history, setHistory] = useState([]);
+    const [selectedLeave, setSelectedLeave] = useState(null);
+
+    const fetchData = async () => {
+        try {
+            const resRequests = await api.get(`/leave/requests/${user.id}`);
+            if (resRequests.status === 200) {
+                setRequests(resRequests?.data || []);
+            }
+
+            const resHistory = await api.get(`/leave/history/${user.id}`);
+            if (resHistory.status === 200) {
+                setHistory(resHistory?.data || []);
+            }
+
+        } catch (error) {
+            console.log(error)
+
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const resRequests = await api.get(`/leave/requests/${user.id}`);
-                if (resRequests.status === 200) {
-                    setRequests(resRequests?.data || []);
-                }
-
-                const resHistory = await api.get(`/leave/history/${user.id}`);
-                if (resHistory.status === 200) {
-                    setHistory(resHistory?.data || []);
-                }
-
-            } catch (error) {
-                console.log(error)
-
-            }
-        };
-
         fetchData();
-
     }, []);
 
     const filteredLeaves = history?.filter((leave) => {
@@ -42,6 +43,38 @@ function LeavePage() {
         return leave.status === filterStatus;
     });
 
+    const handleEdit = (row) => {
+        setSelectedLeave(row);
+        setOpen(true);
+    };
+
+    const handleCancel = async (row) => {
+        const confirm = await Swal.fire({
+            title: "Cancel leave request?",
+            text: "This action cannot be undone",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, cancel it"
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+
+            await api.patch(`/leave/request/${row.id}/cancel`, {
+                user_id: row.user_id
+            });
+
+            Swal.fire("Cancelled", "Leave request cancelled", "success");
+
+            fetchLeaveRequests(); // reload table
+
+        } catch (err) {
+
+            Swal.fire("Error", err.response?.data?.message, "error");
+
+        }
+    };
 
     return (
         <div className="leave-page">
@@ -91,7 +124,12 @@ function LeavePage() {
 
                         <LeaveBalance />
 
-                        <Table data={requests} tab="REQUEST" />
+                        <Table 
+                            data={requests}
+                            tab="REQUEST" 
+                            onEdit={handleEdit}
+                            onCancel={handleCancel}
+                        />
 
                     </>
                 )}
@@ -131,7 +169,12 @@ function LeavePage() {
 
             <LeaveModal
                 show={open}
-                onClose={() => setOpen(false)}
+                onClose={() => {
+                    setOpen(false);
+                    setSelectedLeave(null);
+                }}
+                leaveData={selectedLeave}
+                onSuccess={fetchData}
             />
 
         </div>

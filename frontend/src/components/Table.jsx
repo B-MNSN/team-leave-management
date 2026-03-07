@@ -1,6 +1,7 @@
 import { FiEdit2 } from "react-icons/fi";
+import { FaRegTrashCan } from "react-icons/fa6";
 
-function Table({ tab, data }) {
+function Table({ tab, data, onEdit, onCancel }) {
 
     const getDurationLabel = (duration) => {
         if (duration === "HALF_AM") return "Morning";
@@ -77,15 +78,26 @@ function Table({ tab, data }) {
                                         ${row.status === "APPROVED" && "badge-soft-success"}
                                         ${row.status === "REJECTED" && "badge-soft-danger"}
                                         ${row.status === "PENDING" && "badge-soft-warning"}
+                                        ${row.status === "CANCELLED" && "badge-soft-secondary"}
                                     `}
                                 >
                                     {row.status}
                                 </span>
                             </td>
                             <td>{row.reason}</td>
-                            {tab === "REQUEST" && (
+                            {tab === "REQUEST" && row.status === "PENDING" && (
                                 <td className="text-center">
-                                    <FiEdit2 />
+                                    <div className="d-flex justify-content-center align-items-center gap-3">
+                                        <FiEdit2
+                                            style={{ cursor: "pointer" }}
+                                            onClick={() => onEdit(row)}
+                                        />
+                                        <FaRegTrashCan
+                                            style={{ cursor: "pointer" }}
+                                            className="text-danger"
+                                            onClick={() => onCancel(row)}
+                                        />
+                                    </div>
                                 </td>
                             )}
                         </tr>
