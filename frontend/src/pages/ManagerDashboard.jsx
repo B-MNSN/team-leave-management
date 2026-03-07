@@ -37,38 +37,65 @@ function ManagerDashboard() {
     const cancelled = requests.filter(r => r.status === "CANCELLED").length;
 
     const handleApprove = async (row) => {
-        const confirm = await Swal.fire({
-            title: "Approve request?",
-            icon: "question",
-            showCancelButton: true
-        });
+        try {
+            const { value: comment } = await Swal.fire({
+                title: "Approve request",
+                input: "textarea",
+                inputLabel: "Comment",
+                inputPlaceholder: "Add comment...",
+                showCancelButton: true
+            });
 
-        if (!confirm.isConfirmed) return;
+            if (comment === undefined) return;
 
-        await api.put(`/leave/approve/${row.id}`, {
-            managerId: user.id
-        });
+            await api.put(`/leave/approve/${row.id}`, {
+                managerId: user.id,
+                comment
+            });
 
-        fetchData();
+            Swal.fire("Approved!", "Leave approved successfully", "success");
+
+            fetchData();
+            
+        } catch (error) {
+            console.error(error);
+            Swal.fire(
+                "Error",
+                error.response?.data?.message || "Something went wrong",
+                "error"
+            );
+        }
+        
     };
 
     const handleReject = async (row) => {
-        const { value: comment } = await Swal.fire({
-            title: "Reject request",
-            input: "textarea",
-            inputLabel: "Reason",
-            showCancelButton: true,
-            inputValidator: (v) => !v && "Please enter reason"
-        });
+        try {
+            const { value: comment } = await Swal.fire({
+                title: "Reject request",
+                input: "textarea",
+                inputLabel: "Reason",
+                showCancelButton: true,
+                inputValidator: (v) => !v && "Please enter reason"
+            });
 
-        if (!comment) return;
+            if (!comment) return;
 
-        await api.put(`/leave/reject/${row.id}`, {
-            managerId: user.id,
-            comment
-        });
+            await api.put(`/leave/reject/${row.id}`, {
+                managerId: user.id,
+                comment
+            });
 
-        fetchData();
+            fetchData();
+            
+        } catch (error) {
+            console.error(error);
+            Swal.fire(
+                "Error",
+                error.response?.data?.message || "Something went wrong",
+                "error"
+            );
+        }
+       
     };
 
     return (

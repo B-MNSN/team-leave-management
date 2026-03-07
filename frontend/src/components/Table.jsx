@@ -3,7 +3,6 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import { FiCheck, FiX } from "react-icons/fi";
 
 function Table({ tab, data, onEdit, onCancel, onApprove, onReject }) {
-
     const getDurationLabel = (duration) => {
         if (duration === "HALF_AM") return "Morning";
         if (duration === "HALF_PM") return "Afternoon";
@@ -56,6 +55,7 @@ function Table({ tab, data, onEdit, onCancel, onApprove, onReject }) {
                     <th>Days</th>
                     <th>Status</th>
                     <th>Reason</th>
+                    <th>Comment</th>
                     {((tab === "REQUEST" && (onEdit || onCancel)) || tab === "MANAGER") && (
                         <th className="text-center">Action</th>
                     )}
@@ -94,6 +94,7 @@ function Table({ tab, data, onEdit, onCancel, onApprove, onReject }) {
                                 </span>
                             </td>
                             <td>{row.reason}</td>
+                            <td>{row.manager_comment}</td>
                             {tab === "REQUEST" && row.status === "PENDING" && (onEdit || onCancel) && (
                                 <td className="text-center">
                                     <div className="d-flex justify-content-center align-items-center gap-3">
