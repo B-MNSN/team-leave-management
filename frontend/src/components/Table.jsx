@@ -52,7 +52,9 @@ function Table({ tab, data, onEdit, onCancel }) {
                     <th>Days</th>
                     <th>Status</th>
                     <th>Reason</th>
-                    {tab === "REQUEST" && <th className="text-center">Action</th>}
+                    {tab === "REQUEST" && (onEdit || onCancel) && (
+                        <th className="text-center">Action</th>
+                    )}
                 </tr>
             </thead>
 
@@ -85,7 +87,7 @@ function Table({ tab, data, onEdit, onCancel }) {
                                 </span>
                             </td>
                             <td>{row.reason}</td>
-                            {tab === "REQUEST" && row.status === "PENDING" && (
+                            {tab === "REQUEST" && row.status === "PENDING" && (onEdit || onCancel) &&(
                                 <td className="text-center">
                                     <div className="d-flex justify-content-center align-items-center gap-3">
                                         <FiEdit2
