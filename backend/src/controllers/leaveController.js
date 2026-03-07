@@ -108,6 +108,27 @@ const createLeaveRequest = async (req, res) => {
             });
         }
 
+        let calculatedDays = 0;
+        const current = new Date(start);
+
+        while (current <= end) {
+            const day = current.getDay();
+
+            if (day !== 0 && day !== 6) {
+                calculatedDays++;
+            }
+
+            current.setDate(current.getDate() + 1);
+        }
+
+        if (calculatedDays === 0) {
+            throw new Error("Leave cannot include weekends only");
+        }
+
+        if (duration === "FULL" && total_days !== calculatedDays) {
+            throw new Error("Invalid leave days calculation");
+        }
+
         await conn.beginTransaction();
 
         // CHECK USER
@@ -414,6 +435,12 @@ const cancelLeaveRequest = async (req, res) => {
 
         if (leave.length === 0) {
             throw new Error("Leave request not found");
+        }
+
+        if (leave[0].status !== "PENDING") {
+            return res.status(400).json({
+                message: "Only pending requests can be cancelled"
+            });
         }
 
         if (leave[0].status === "CANCELLED") {
