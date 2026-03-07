@@ -35,7 +35,7 @@ team-leave-management
 
 ### Why React + Vite
 
-- **Fast development server
+- **Fast development server**
 - **Component-based architecture** for building reusable UI components
 - **Optimized build performance** with modern tooling
 - **Clean separation of UI logic and state management**
@@ -183,8 +183,8 @@ Sample users for testing.
 
 | Role     | Email                 | Password |
 | -------- | ----------------------| -------- |
-| Employee | [user1@company.com]   | user1234 |
-| Manager  | [manager@company.com] | user1234 |
+| Employee | user1@company.com     | user1234 |
+| Manager  | manager@company.com   | user1234 |
 
 ---
 # Author
