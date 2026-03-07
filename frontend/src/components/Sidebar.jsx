@@ -2,16 +2,14 @@ import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import {
     FiHome,
-    FiUsers,
     FiCalendar,
-    FiBarChart2,
-    FiSettings,
     FiMenu
 } from "react-icons/fi";
 import { IoFlash } from "react-icons/io5";
 
 
 function Sidebar() {
+    const user = JSON.parse(localStorage.getItem("user"));
     const [collapsed, setCollapsed] = useState(false);
 
     return (
@@ -36,15 +34,12 @@ function Sidebar() {
                     <span>Dashboard</span>
                 </NavLink>
 
-                <NavLink to="/leave" className="menu-item">
-                    <FiCalendar />
-                    <span>Leave</span>
-                </NavLink>
-
-                <NavLink to="/settings" className="menu-item">
-                    <FiSettings />
-                    <span>Settings</span>
-                </NavLink>
+                {user.role !== "MANAGER" && (
+                    <NavLink to="/leave" className="menu-item">
+                        <FiCalendar />
+                        <span>Leave</span>
+                    </NavLink>
+                )}
             </nav>
         </aside>
     );

@@ -33,7 +33,7 @@ function EmployeeDashboard() {
     const pending = requests.filter(r => r.status === "PENDING").length;
     const approved = requests.filter(r => r.status === "APPROVED").length;
     const rejected = requests.filter(r => r.status === "REJECTED").length;
-
+    const cancelled = requests.filter(r => r.status === "CANCELLED").length;
 
     return (
         <div className="dashboard">
@@ -47,7 +47,9 @@ function EmployeeDashboard() {
 
             </div>
 
-            <div className="stats-grid mb-4">
+            <LeaveBalance />
+
+            <div className="stats-grid mt-5 mb-4">
                 <div className="stat-card">
                     <div className="stat-icon pending">
                         <FaClock />
@@ -92,8 +94,6 @@ function EmployeeDashboard() {
                     </div>
                 </div>
             </div>
-
-            <LeaveBalance />
 
             <div className="mt-5">
                 <div className="d-flex justify-content-between align-items-center">
