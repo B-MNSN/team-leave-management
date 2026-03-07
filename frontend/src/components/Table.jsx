@@ -1,7 +1,8 @@
 import { FiEdit2 } from "react-icons/fi";
 import { FaRegTrashCan } from "react-icons/fa6";
+import { FiCheck, FiX } from "react-icons/fi";
 
-function Table({ tab, data, onEdit, onCancel }) {
+function Table({ tab, data, onEdit, onCancel, onApprove, onReject }) {
 
     const getDurationLabel = (duration) => {
         if (duration === "HALF_AM") return "Morning";
@@ -46,13 +47,16 @@ function Table({ tab, data, onEdit, onCancel }) {
             <thead>
                 <tr>
                     <th>No.</th>
+                    {tab === "MANAGER" && (
+                        <th>User name</th>
+                    )}
                     <th>Date</th>
                     <th>Type</th>
                     <th>Duration</th>
                     <th>Days</th>
                     <th>Status</th>
                     <th>Reason</th>
-                    {tab === "REQUEST" && (onEdit || onCancel) && (
+                    {((tab === "REQUEST" && (onEdit || onCancel)) || tab === "MANAGER") && (
                         <th className="text-center">Action</th>
                     )}
                 </tr>
@@ -70,6 +74,9 @@ function Table({ tab, data, onEdit, onCancel }) {
                     data.map((row, rowIndex) => (
                         <tr key={rowIndex}>
                             <td>{rowIndex + 1}</td>
+                            {row.employee && (
+                                <td>{row.employee}</td>
+                            )}
                             <td>{formatLeaveDate(row.start_date, row.end_date)}</td>
                             <td>{row.leave_type_name}</td>
                             <td>{getDurationLabel(row.duration)}</td>
@@ -87,7 +94,7 @@ function Table({ tab, data, onEdit, onCancel }) {
                                 </span>
                             </td>
                             <td>{row.reason}</td>
-                            {tab === "REQUEST" && row.status === "PENDING" && (onEdit || onCancel) &&(
+                            {tab === "REQUEST" && row.status === "PENDING" && (onEdit || onCancel) && (
                                 <td className="text-center">
                                     <div className="d-flex justify-content-center align-items-center gap-3">
                                         <FiEdit2
@@ -102,6 +109,26 @@ function Table({ tab, data, onEdit, onCancel }) {
                                     </div>
                                 </td>
                             )}
+                            <td>
+                                {tab === "MANAGER" && row.status === "PENDING" && (
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            className="icon-btn approve"
+                                            onClick={() => onApprove(row)}
+                                        >
+                                            <FiCheck />
+                                        </button>
+
+                                        <button
+                                            className="icon-btn reject"
+                                            onClick={() => onReject(row)}
+                                        >
+                                            <FiX />
+                                        </button>
+
+                                    </div>
+                                )}
+                            </td>
                         </tr>
 
                     ))

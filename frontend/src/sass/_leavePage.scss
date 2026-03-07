@@ -10,24 +10,65 @@
         font-weight: 500;
     }
 
-    .badge-soft-warning {
-        background: #fff7e6;
-        color: #d48806;
-    }
-
     .badge-soft-success {
-        background: #f6ffed;
+        background-color: #f6ffed;
         color: #389e0d;
     }
 
     .badge-soft-danger {
-        background: #fff1f0;
-        color: #cf1322;
+        background-color: #ffecec;
+        color: #e53935;
+    }
+
+    .badge-soft-warning {
+        background-color: #fff6e5;
+        color: #d98c00;
     }
 
     .badge-soft-secondary {
-        background: #ffecee;
-        color: #682c33;
+        background-color: #f0f0f0;
+        color: #777;
+    }
+
+
+    .icon-btn {
+        border: none;
+        background: white;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 1px solid #eee;
+        transition: all 0.2s ease;
+
+        &.approve {
+            color: #389e0d;
+
+            &:hover {
+                background-color: #f6ffed;
+                border-color: #399e0d55;
+            }
+        }
+
+        &.reject {
+            color: #e53935;
+
+            &:hover {
+                background-color: #ffecec;
+                border-color: #ffcdd2;
+            }
+        }
+    }
+
+    svg {
+        transition: transform 0.15s ease;
+
+        &:hover {
+            transform: scale(1.1);
+        }
     }
 }
 
