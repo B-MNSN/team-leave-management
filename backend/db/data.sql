@@ -4,11 +4,11 @@ USE leave_management;
 -- INSERT USERS
 -- =====================================
 
-INSERT INTO users (name, email, password, role) VALUES
-('user1','user1@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
-('user2','user2@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
-('user3','user3@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE'),
-('manager','manager@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','MANAGER');
+INSERT INTO users (name, email, password, role, manager_id) VALUES
+('user1','user1@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE', 4),
+('user2','user2@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE', 4),
+('user3','user3@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','EMPLOYEE', 4),
+('manager','manager@company.com','$2a$12$ve9zXHXTRHPp4IHUb4b8c.Hj6WM0sbjZUfEyu1ekIizva/5L0M2ke','MANAGER', 4);
 
 
 

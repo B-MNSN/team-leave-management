@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('EMPLOYEE','MANAGER') DEFAULT 'EMPLOYEE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    manager_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_manager
+    FOREIGN KEY (manager_id) REFERENCES users(id)
 );
 
 -- =====================================
