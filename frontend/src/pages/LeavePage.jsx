@@ -20,7 +20,8 @@ function LeavePage() {
         try {
             const resRequests = await api.get(`/leave/requests/${user.id}`);
             if (resRequests.status === 200) {
-                setRequests(resRequests?.data || []);
+                const filterRequest = resRequests?.data?.filter((item) => item.status === 'PENDING');
+                setRequests(filterRequest || []);
             }
 
             const resHistory = await api.get(`/leave/history/${user.id}`);

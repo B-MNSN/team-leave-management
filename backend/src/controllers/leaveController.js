@@ -6,13 +6,14 @@ const getLeaveRequestsByUserId = async (req, res) => {
         const sql = `
             SELECT lq.*, leave_types.name as leave_type_name FROM leave_requests lq
             LEFT JOIN leave_types ON lq.leave_type_id = leave_types.id
-            WHERE lq.status = "pending" AND lq.user_id = ?
+            WHERE lq.user_id = ?
+            ORDER BY created_at DESC
         `;
 
         const [rows] = await db.query(sql, [userId]);
 
         res.json(rows);
-       
+
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: 'Error fetching leave requests' });
@@ -32,7 +33,7 @@ const getLeaveHistoryByUserId = async (req, res) => {
         const [rows] = await db.query(sql, [userId]);
 
         res.json(rows);
-        
+
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: 'Error fetching leave history' });
@@ -61,7 +62,7 @@ const getLeaveBalanceByUserId = async (req, res) => {
 
         const [rows] = await db.query(sql, [userId]);
 
-         const results = rows.map(row => ({
+        const results = rows.map(row => ({
             ...row,
             annual_quota: Number(row.annual_quota),
             used_days: Number(row.used_days),
@@ -462,180 +463,148 @@ const cancelLeaveRequest = async (req, res) => {
     }
 };
 
-const approveLeaveRequest = async (req, res) => {
-
-    let conn;
-
+const approveLeave = async (req, res) => {
     try {
-        conn = await db.getConnection();
 
         const { id } = req.params;
-        const { approver_id } = req.body;
+        const { managerId, comment } = req.body;
 
-        await conn.beginTransaction();
-
-        const [leave] = await conn.query(
-            `
-                SELECT user_id, leave_type_id, total_days, status
-                FROM leave_requests
-                WHERE id = ?
-            `,
+        // check current status
+        const [rows] = await db.query(
+            "SELECT status FROM leave_requests WHERE id = ?",
             [id]
         );
 
-        if (leave.length === 0) {
-            throw new Error("Leave request not found");
+        if (!rows.length) {
+            return res.status(404).json({ message: "Leave request not found" });
         }
 
-        const request = leave[0];
-
-        if (request.status !== "PENDING") {
-            throw new Error("Leave already processed");
+        if (rows[0].status !== "PENDING") {
+            return res.status(400).json({
+                message: "This leave request has already been processed"
+            });
         }
 
-        // GET QUOTA
-        const [quota] = await conn.query(
-            `
-                SELECT annual_quota
-                FROM leave_types
-                WHERE id = ?
-            `,
-            [request.leave_type_id]
-        );
-
-        const annualQuota = quota[0].annual_quota;
-
-        // USED DAYS
-        const [used] = await conn.query(
-            `
-                SELECT COALESCE(SUM(total_days),0) used_days
-                FROM leave_requests
-                WHERE user_id = ?
-                AND leave_type_id = ?
-                AND status = 'APPROVED'
-            `,
-            [request.user_id, request.leave_type_id]
-        );
-
-        const remaining = annualQuota - used[0].used_days;
-
-        if (request.total_days > remaining) {
-            throw new Error("Insufficient leave balance");
-        }
-
-        // APPROVE
-        await conn.query(
+        await db.query(
             `
                 UPDATE leave_requests
-                SET status = 'APPROVED'
+                SET status = 'APPROVED',
+                    approved_by = ?,
+                    manager_comment = ?
                 WHERE id = ?
             `,
-            [id]
+            [managerId, comment || null, id]
         );
 
-        // LOG
-        await conn.query(
-            `
-                INSERT INTO leave_request_logs
-                (leave_request_id, action, action_by)
-                VALUES (?, 'APPROVED', ?)
-            `,
-            [id, approver_id]
-        );
+        res.json({ message: "Leave approved successfully" });
 
-        await conn.commit();
-
-        res.json({
-            message: "Leave approved"
-        });
-
-    } catch (err) {
-
-        if (conn) await conn.rollback();
-
-        res.status(400).json({
-            message: err.message
-        });
-
-    } finally {
-
-        if (conn) conn.release();
-
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
     }
 };
 
-const rejectLeaveRequest = async (req, res) => {
-
-    let conn;
-
+const rejectLeave = async (req, res) => {
     try {
-
-        conn = await db.getConnection();
-
         const { id } = req.params;
-        const { approver_id } = req.body;
+        const { managerId, comment } = req.body;
 
-        await conn.beginTransaction();
+        if (!comment || comment.trim() === "") {
+            return res.status(400).json({
+                message: "Rejection reason is required"
+            });
+        }
 
-        const [leave] = await conn.query(
-            `SELECT status FROM leave_requests WHERE id = ?`,
+        const [rows] = await db.query(
+            "SELECT status FROM leave_requests WHERE id = ?",
             [id]
         );
 
-        if (leave.length === 0) {
-            throw new Error("Leave request not found");
+        if (!rows.length) {
+            return res.status(404).json({ message: "Leave request not found" });
         }
 
-        if (leave[0].status !== "PENDING") {
-            throw new Error("Leave already processed");
+        if (rows[0].status !== "PENDING") {
+            return res.status(400).json({
+                message: "This leave request has already been processed"
+            });
         }
 
-        await conn.query(
+        await db.query(
             `
                 UPDATE leave_requests
-                SET status = 'REJECTED'
+                SET status = 'REJECTED',
+                    approved_by = ?,
+                    manager_comment = ?
                 WHERE id = ?
             `,
-            [id]
+            [managerId, comment, id]
         );
 
-        await conn.query(
-            `
-                INSERT INTO leave_request_logs
-                (leave_request_id, action, action_by)
-                VALUES (?, 'REJECTED', ?)
-            `,
-            [id, approver_id]
-        );
+        res.json({ message: "Leave rejected successfully" });
 
-        await conn.commit();
-
-        res.json({
-            message: "Leave rejected"
-        });
-
-    } catch (err) {
-
-        if (conn) await conn.rollback();
-
-        res.status(400).json({
-            message: err.message
-        });
-
-    } finally {
-
-        if (conn) conn.release();
-
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
     }
 };
 
-module.exports = { 
-    getLeaveRequestsByUserId, 
-    createLeaveRequest, 
-    getLeaveHistoryByUserId, 
-    approveLeaveRequest, 
-    getLeaveBalanceByUserId, 
-    updateLeaveRequest, 
-    rejectLeaveRequest,
-    cancelLeaveRequest
+const getLeaveTeam = async (req, res) => {
+    try {
+        const { managerId } = req.params;
+        const { status, start, end } = req.query;
+
+        let query = `
+            SELECT 
+                lr.id,
+                u.name AS employee,
+                lt.name AS leave_type_name,
+                lr.start_date,
+                lr.end_date,
+                lr.duration,
+                lr.total_days,
+                lr.reason,
+                lr.status,
+                lr.manager_comment
+            FROM leave_requests lr
+            JOIN users u 
+                ON lr.user_id = u.id
+            JOIN leave_types lt 
+                ON lr.leave_type_id = lt.id
+            WHERE u.manager_id = ?
+        `;
+
+        const params = [managerId];
+
+        if (status) {
+            query += ` AND lr.status = ?`;
+            params.push(status);
+        }
+
+        if (start && end) {
+            query += ` AND lr.start_date BETWEEN ? AND ?`;
+            params.push(start, end);
+        }
+
+        query += ` ORDER BY lr.created_at DESC`;
+
+        const [rows] = await db.query(query, params);
+
+        res.json(rows);
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: 'Error fetching team leave requests' });
+    }
+};
+
+module.exports = {
+    getLeaveRequestsByUserId,
+    createLeaveRequest,
+    getLeaveHistoryByUserId,
+    getLeaveBalanceByUserId,
+    updateLeaveRequest,
+    rejectLeave,
+    approveLeave,
+    cancelLeaveRequest,
+    getLeaveTeam,
 };
